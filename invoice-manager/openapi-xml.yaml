@@ -1,0 +1,1460 @@
+openapi: 3.0.0
+info:
+  title: Invoice Manager API
+  version: 2.0.0
+  description: This is a simple API to manage invoices
+servers:
+  - url: http://localhost:8080/invoice-manager-server
+    description: Local development server
+
+paths:
+  # Invoice
+  /invoices:
+    get:
+      summary: Get all invoices
+      description: Get a list of all invoices with optional filters for paid status, customer number, receiver id, and order number.
+      tags:
+        - Invoices
+      operationId: getAllInvoices
+      parameters:
+        - name: paid
+          in: query
+          description: Filter invoices by paid status
+          required: false
+          schema:
+            type: boolean
+        - name: customerNumber
+          in: query
+          description: Filter invoices by customer number
+          required: false
+          schema:
+            type: integer
+        - name: receiverId
+          in: query
+          description: Filter invoices by receiver
+          required: false
+          schema:
+            type: integer
+        - name: orderNumber
+          in: query
+          description: Filter invoices by order number
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of invoices
+          content:
+            application/xml:
+              schema:
+                description: A list of invoices
+                type: array
+                xml:
+                  name: Invoices
+                  wrapped: true
+                items:
+                  $ref: '#/components/schemas/Invoice'
+        '500':
+          description: Error while getting the invoices
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new invoice
+      description: Create a new invoice based on the provided invoice data.
+      tags:
+        - Invoices
+      operationId: createInvoice
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+      responses:
+        '201':
+          description: The invoice was created
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '500':
+          description: Error while creating the invoice
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /invoices/{id}:
+    get:
+      summary: Get an invoice by id
+      description: Get the details of a specific invoice using its unique identifier.
+      tags:
+        - Invoices
+      operationId: getInvoiceById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An invoice
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '404':
+          description: Invoice with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while getting the invoice
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update an invoice
+      description: Update the details of an existing invoice using its unique identifier.
+      tags:
+        - Invoices
+      operationId: updateInvoiceById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+      responses:
+        '200':
+          description: The updated invoice
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '404':
+          description: Invoice with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while updating the invoice
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete an invoice
+      description: Delete an existing invoice using its unique identifier. Throws an error if the invoice has associated positions.
+      tags:
+        - Invoices
+      operationId: deleteInvoiceById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The invoice was deleted
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '404':
+          description: Invoice with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while deleting the invoice
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /invoices/{id}/positions:
+    get:
+      summary: Get all positions of an invoice
+      description: Get all positions associated with a specific invoice using its unique identifier.
+      tags:
+        - Invoices
+      operationId: getAllPositionsOfInvoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of positions
+          content:
+            application/xml:
+              schema:
+                description: A list of positions of the invoice
+                type: array
+                xml:
+                  name: Positions
+                  wrapped: true
+                items:
+                  $ref: '#/components/schemas/InvoicePosition'
+        '404':
+          description: Invoice with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /invoices/{id}/pdf:
+    get:
+      summary: Get an invoice as PDF
+      description: Generate a pdf file for the invoice with the given id and returns its unique identifier.
+      tags:
+        - Invoices
+      operationId: getInvoicePdfById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The pdf file id of the invoice
+          content:
+            application/xml:
+              schema:
+                description: The pdf file id of the invoice
+                type: integer
+        '404':
+          description: Invoice with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Business Partner
+  /business-partners:
+    get:
+      summary: Get all business partners
+      description: Get a list of all business partners with optional filter by name.
+      tags:
+        - Business Partners
+      operationId: getAllBusinessPartners
+      parameters:
+        - name: name
+          in: query
+          description: Filter business partners by name
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of business partners
+          content:
+            application/xml:
+              schema:
+                description: A list of business partners
+                type: array
+                xml:
+                  name: BusinessPartners
+                  wrapped: true
+                items:
+                  $ref: '#/components/schemas/BusinessPartner'
+        '500':
+          description: Error while getting the business partners
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new business partner
+      description: Create a new business partner based on the provided Business Partner object.
+      tags:
+        - Business Partners
+      operationId: createBusinessPartner
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/BusinessPartner'
+      responses:
+        '201':
+          description: The business partner was created
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/BusinessPartner'
+        '500':
+          description: Error while creating the business partner
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /business-partners/{id}:
+    get:
+      summary: Get a business partner by id
+      description: Get the details of a specific business partner using its unique identifier.
+      tags:
+        - Business Partners
+      operationId: getBusinessPartnerById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the business partner
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A business partner
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/BusinessPartner'
+        '404':
+          description: Business partner with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while getting the business partner
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a business partner
+      description: Update the details of an existing business partner using its unique identifier.
+      tags:
+        - Business Partners
+      operationId: updateBusinessPartnerById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the business partner
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/BusinessPartner'
+      responses:
+        '200':
+          description: The updated business partner
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/BusinessPartner'
+        '404':
+          description: Business partner with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while updating the business partner
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a business partner
+      description: Delete an existing business partner using its unique identifier. Throws an error if the business partner has associated contact persons or invoices.
+      tags:
+        - Business Partners
+      operationId: deleteBusinessPartnerById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the business partner
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The business partner was deleted
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/BusinessPartner'
+        '404':
+          description: Business partner with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while deleting the business partner
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /business-partners/{id}/contact-persons:
+    get:
+      summary: Get all contact persons of a business partner
+      description: Get all contact persons associated with a specific business partner using its unique identifier.
+      tags:
+        - Business Partners
+      operationId: getAllContactPersonsOfBusinessPartner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the business partner
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of contact persons
+          content:
+            application/xml:
+              schema:
+                description: A list of contact persons of the business partner
+                type: array
+                xml:
+                  name: ContactPersons
+                  wrapped: true
+                items:
+                  $ref: '#/components/schemas/ContactPerson'
+        '404':
+          description: Business partner with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  # Contact Person
+  /contact-persons:
+    get:
+      summary: Get all contact persons
+      description: Get a list of all contact persons with optional filters for last name, first name, and business partner id.
+      tags:
+        - Contact Persons
+      operationId: getAllContactPersons
+      parameters:
+        - name: name
+          in: query
+          description: Filter contact persons by last name
+          required: false
+          schema:
+            type: string
+        - name: firstName
+          in: query
+          description: Filter contact persons by first name
+          required: false
+          schema:
+            type: string
+        - name: businessPartner
+          in: query
+          description: Filter contact persons by business partner id
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of contact persons
+          content:
+            application/xml:
+              schema:
+                description: A list of contact persons
+                type: array
+                xml:
+                  name: ContactPersons
+                  wrapped: true
+                items:
+                  $ref: '#/components/schemas/ContactPerson'
+        '500':
+          description: Error while getting the contact persons
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new contact person
+      description: Creates a new contact person based on the provided Contact Person object.
+      tags:
+        - Contact Persons
+      operationId: createContactPerson
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/ContactPerson'
+      responses:
+        '201':
+          description: The contact person was created
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ContactPerson'
+        '500':
+          description: Error while creating the contact person
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /contact-persons/{id}:
+    get:
+      summary: Get a contact person by id
+      description: Get the details of a specific contact person using its unique identifier.
+      tags:
+        - Contact Persons
+      operationId: getContactPersonById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the contact person
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A contact person
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ContactPerson'
+        '404':
+          description: Contact person with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while getting the contact person
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a contact person
+      description: Update the details of an existing contact person using its unique identifier.
+      tags:
+        - Contact Persons
+      operationId: updateContactPersonById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the contact person
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/ContactPerson'
+      responses:
+        '200':
+          description: The updated contact person
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ContactPerson'
+        '404':
+          description: Contact person with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while updating the contact person
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a contact person
+      description: Delete an existing contact person using its unique identifier. Throws an error if the contact person is associated with any invoices.
+      tags:
+        - Contact Persons
+      operationId: deleteContactPersonById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the contact person
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The contact person was deleted
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ContactPerson'
+        '404':
+          description: Contact person with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while deleting the contact person
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  # Invoice Template
+  /invoice-templates:
+    get:
+      summary: Get all invoice templates
+      description: Get a list of all invoice templates.
+      tags:
+        - Invoice Templates
+      operationId: getAllInvoiceTemplates
+      responses:
+        '200':
+          description: A list of invoice templates
+          content:
+            application/xml:
+              schema:
+                description: A list of invoice templates
+                type: array
+                xml:
+                  name: InvoiceTemplates
+                  wrapped: true
+                items:
+                  $ref: '#/components/schemas/InvoiceTemplate'
+        '500':
+          description: Error while getting the invoice templates
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new invoice template
+      description: Create a new invoice template based on the provided Invoice Template object.
+      tags:
+        - Invoice Templates
+      operationId: createInvoiceTemplate
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/InvoiceTemplate'
+      responses:
+        '201':
+          description: The invoice template was created
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/InvoiceTemplate'
+        '500':
+          description: Error while creating the invoice template
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /invoice-templates/{id}:
+    get:
+      summary: Get a invoice template by id
+      description: Get the details of a specific invoice template using its unique identifier.
+      tags:
+        - Invoice Templates
+      operationId: getInvoiceTemplateById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice template
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A invoice template
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/InvoiceTemplate'
+        '404':
+          description: Invoice template with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while getting the invoice template
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a invoice template
+      description: Update the details of an existing invoice template using its unique identifier.
+      tags:
+        - Invoice Templates
+      operationId: updateInvoiceTemplateById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice template
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/InvoiceTemplate'
+      responses:
+        '200':
+          description: The updated invoice template
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/InvoiceTemplate'
+        '404':
+          description: Invoice template with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while updating the invoice template
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a invoice template
+      description: Delete an existing invoice template using its unique identifier. Throws an error if the invoice template is associated with any invoices.
+      tags:
+        - Invoice Templates
+      operationId: deleteInvoiceTemplateById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice template
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The invoice template was deleted
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/InvoiceTemplate'
+        '404':
+          description: Invoice template with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while deleting the invoice template
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  # Position
+  /invoice-positions:
+    get:
+      summary: Get all invoice positions
+      description: Get a list of all invoice positions.
+      tags:
+        - InvoicePositions
+      operationId: getAllInvoicePositions
+      responses:
+        '200':
+          description: A list of invoice positions
+          content:
+            application/xml:
+              schema:
+                description: A list of invoice positions
+                type: array
+                xml:
+                  name: InvoicePositions
+                  wrapped: true
+                items:
+                  $ref: '#/components/schemas/InvoicePosition'
+        '500':
+          description: Error while getting the invoice positions
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new invoice position
+      description: Create a new invoice position based on the provided Invoice Position object.
+      tags:
+        - InvoicePositions
+      operationId: createPosition
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/InvoicePosition'
+      responses:
+        '201':
+          description: The invoice position was created
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/InvoicePosition'
+        '500':
+          description: Error while creating the invoice position
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /invoice-positions/{id}:
+    get:
+      summary: Get a invoice position by id
+      description: Get the details of a specific invoice position using its unique identifier.
+      tags:
+        - InvoicePositions
+      operationId: getInvoicePositionById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice position
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A invoice position
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/InvoicePosition'
+        '404':
+          description: Invoice Position with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while getting the invoice position
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a invoice position
+      description: Update the details of an existing invoice position using its unique identifier.
+      tags:
+        - InvoicePositions
+      operationId: updateInvoicePositionById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice position
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/InvoicePosition'
+      responses:
+        '200':
+          description: The updated invoice position
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/InvoicePosition'
+        '404':
+          description: Invoice position with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while updating the invoice position
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a invoice position
+      description: Delete an existing invoice position using its unique identifier.
+      tags:
+        - InvoicePositions
+      operationId: deleteInvoicePositionById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the invoice position
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The invoice position was deleted
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/InvoicePosition'
+        '404':
+          description: Invoice position with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while deleting the invoice position
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  # Sales Tax
+  /sales-taxes:
+    get:
+      summary: Get all sales taxes
+      description: Get a list of all sales taxes.
+      tags:
+        - Sales Taxes
+      operationId: getAllSalesTaxes
+      responses:
+        '200':
+          description: A list of sales taxes
+          content:
+            application/xml:
+              schema:
+                description: A list of sales taxes
+                type: array
+                xml:
+                  name: SalesTaxes
+                  wrapped: true
+                items:
+                  $ref: '#/components/schemas/SalesTax'
+        '500':
+          description: Error while getting the sales taxes
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new sales tax
+      description: Create a new sales tax based on the provided Sales Tax object.
+      tags:
+        - Sales Taxes
+      operationId: createSalesTax
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/SalesTax'
+      responses:
+        '201':
+          description: The sales tax was created
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/SalesTax'
+        '500':
+          description: Error while creating the sales tax
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /sales-taxes/{id}:
+    get:
+      summary: Get a sales tax by id
+      description: get the details of a specific sales tax using its unique identifier.
+      tags:
+        - Sales Taxes
+      operationId: getSalesTaxById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the sales tax
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A sales tax
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/SalesTax'
+        '404':
+          description: Sales tax with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while getting the sales tax
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a sales tax
+      description: Update the details of an existing sales tax using its unique identifier.
+      tags:
+        - Sales Taxes
+      operationId: updateSalesTaxById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the sales tax
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/SalesTax'
+      responses:
+        '200':
+          description: The updated sales tax
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/SalesTax'
+        '404':
+          description: Sales tax with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while updating the sales tax
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a sales tax
+      description: Delete an existing sales tax using its unique identifier. Throws an error if the sales tax is associated with any invoices.
+      tags:
+        - Sales Taxes
+      operationId: deleteSalesTaxById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the sales tax
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The sales tax was deleted
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/SalesTax'
+        '404':
+          description: Sales tax with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error while deleting the sales tax
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  # Files
+  /files:
+    post:
+      summary: Upload a file
+      description: Upload a new file to use as invoice template as multipart/form-data. Returns the id of the uploaded file.
+      tags:
+        - Files
+      operationId: uploadFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/File'
+      responses:
+        '201':
+          description: The file was uploaded
+          content:
+            application/xml:
+              schema:
+                description: The id of the uploaded file
+                type: integer
+        '500':
+          description: Error while uploading the file
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /files/{id}:
+    get:
+      summary: Download a file
+      description: Download a file by its unique identifier.
+      tags:
+        - Files
+      operationId: downloadFileById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the file
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The file
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/DownloadFile'
+        '404':
+          description: File with given id not found
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    SalesTax:
+      type: object
+      xml:
+        name: SalesTax
+      properties:
+        id:
+          type: integer
+        rate:
+          type: number
+        name:
+          type: string
+      required:
+        - rate
+        - name
+      example:
+        id: 1
+        rate: 19.0
+        name: Standard VAT
+    InvoicePosition:
+      type: object
+      xml:
+        name: InvoicePosition
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        pricePerUnitInCents:
+          type: number
+        quantity:
+          type: number
+          format: float
+        unit:
+          type: string
+          enum:
+            - hour
+            - pd
+            - piece
+        invoice:
+          type: integer
+      required:
+        - pricePerUnitInCents
+        - quantity
+        - unit
+        - invoice
+      example:
+        id: 1
+        description: Consulting services
+        pricePerUnitInCents: 15000
+        quantity: 2.5
+        unit: hour
+        invoice: 1
+    InvoiceTemplate:
+      type: object
+      xml:
+        name: InvoiceTemplate
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        marginTopFirstPage:
+          type: number
+          format: float
+        marginBottomFirstPage:
+          type: number
+          format: float
+        marginTopOtherPages:
+          type: number
+          format: float
+        marginBottomOtherPages:
+          type: number
+          format: float
+        fileId:
+          type: integer
+      required:
+        - name
+        - marginTopFirstPage
+        - marginBottomFirstPage
+        - marginTopOtherPages
+        - marginBottomOtherPages
+      example:
+        id: 1
+        name: Standard Template
+        marginTopFirstPage: 20.0
+        marginBottomFirstPage: 20.0
+        marginTopOtherPages: 15.0
+        marginBottomOtherPages: 15.0
+        fileId: 1
+    ContactPerson:
+      type: object
+      xml:
+        name: ContactPerson
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        firstName:
+          type: string
+        email:
+          type: string
+        salutation:
+          type: string
+          enum:
+            - Frau
+            - Herr
+            - Divers
+        address:
+          $ref: '#/components/schemas/Address'
+        businessPartner:
+          type: integer
+      required:
+        - firstName
+        - name
+        - salutation
+        - businessPartner
+        - email
+      example:
+        id: 1
+        name: Doe
+        firstName: John
+        email: john.doe@example.com
+        salutation: Herr
+        address:
+          id: 1
+          street: Main Street
+          number: 123
+          zip: 12345
+          city: Sample City
+          country: Sample Country
+        businessPartner: 1
+    BusinessPartner:
+      type: object
+      xml:
+        name: BusinessPartner
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+        contactPersons:
+          type: array
+          items:
+            type: integer
+        invoices:
+          type: array
+          items:
+            type: integer
+      required:
+        - name
+        - address
+      example:
+        id: 1
+        name: Acme Corporation
+        description: A sample business partner
+        address:
+          id: 1
+          street: Main Street
+          number: 123
+          zip: 12345
+          city: Sample City
+          country: Sample Country
+        contactPersons:
+          - 1
+        invoices:
+          - 1
+    Address:
+      type: object
+      xml:
+        name: Address
+      properties:
+        id:
+          type: integer
+        street:
+          type: string
+        number:
+          type: string
+        zip:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+      required:
+        - street
+        - number
+        - zip
+        - city
+        - country
+      example:
+        id: 1
+        street: Main Street
+        number: 123
+        zip: 12345
+        city: Sample City
+        country: Sample Country
+    Invoice:
+      type: object
+      xml:
+        name: Invoice
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        viaMail:
+          type: boolean
+        preText:
+          type: string
+        postText:
+          type: string
+        serviceFrom:
+          type: string
+          format: date
+        serviceTo:
+          type: string
+          format: date
+        orderNumber:
+          type: string
+        customerNumber:
+          type: integer
+        paid:
+          type: boolean
+        positions:
+          type: array
+          items:
+            type: integer
+        receiver:
+          type: integer
+        salesTax:
+          type: integer
+        invoiceTemplate:
+          type: integer
+        file:
+          type: integer
+      required:
+        - serviceFrom
+        - customerNumber
+        - salesTax
+        - invoiceTemplate
+      example:
+        id: 1
+        description: Invoice for consulting services
+        viaMail: true
+        preText: Thank you for your business.
+        postText: Please pay within 30 days.
+        serviceFrom: 2024-01-01
+        serviceTo: 2024-01-31
+        orderNumber: ORD-12345
+        customerNumber: 1001
+        paid: false
+        positions:
+          - 1
+          - 2
+        receiver: 1
+        salesTax: 1
+        invoiceTemplate: 1
+        file: 1
+    File:
+      type: object
+      xml:
+        name: File
+      properties:
+        id:
+          type: integer
+        fileName:
+          type: string
+        data:
+          type: string
+          format: binary
+      required:
+        - fileName
+        - data
+      example:
+        id: 1
+        fileName: template.docx
+        data: (binary data)
+    DownloadFile:
+      type: object
+      xml:
+        name: DownloadFile
+      properties:
+        id:
+          type: integer
+        fileName:
+          type: string
+        data:
+          type: string
+          format: byte
+      required:
+        - id
+        - fileName
+        - data
+      example:
+        id: 1
+        fileName: template.docx
+        data: (base64 encoded data)
+    Error:
+      type: object
+      xml:
+        name: Error
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+      required:
+        - code
+        - description
+      example:
+        code: ERROR_INVOICE_NOT_FOUND
+        description: Invoice with the given (ID) was not found
