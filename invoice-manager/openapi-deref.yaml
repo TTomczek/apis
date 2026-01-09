@@ -1,0 +1,192 @@
+openapi: 3.0.0
+info:
+  title: Invoice Manager API
+  version: 2.0.0
+  description: This is a simple API to manage invoices
+servers:
+  - url: http://localhost:8080/invoice-manager-server
+    description: Local development server
+
+paths:
+  # Invoice
+  /invoices:
+    get:
+      summary: Get all invoices
+      description: Get a list of all invoices with optional filters for paid status, customer number, receiver id, and order number.
+      tags:
+        - Invoices
+      operationId: getAllInvoices
+      parameters:
+        - name: paid
+          in: query
+          description: Filter invoices by paid status
+          required: false
+          schema:
+            type: boolean
+        - name: customerNumber
+          in: query
+          description: Filter invoices by customer number
+          required: false
+          schema:
+            type: integer
+        - name: receiverId
+          in: query
+          description: Filter invoices by receiver
+          required: false
+          schema:
+            type: integer
+        - name: orderNumber
+          in: query
+          description: Filter invoices by order number
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of invoices
+          content:
+            application/json:
+              schema:
+                description: A list of invoices
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    description:
+                      type: string
+                    viaMail:
+                      type: boolean
+                    preText:
+                      type: string
+                    postText:
+                      type: string
+                    serviceFrom:
+                      type: string
+                      format: date
+                    serviceTo:
+                      type: string
+                      format: date
+                    orderNumber:
+                      type: string
+                    customerNumber:
+                      type: integer
+                    paid:
+                      type: boolean
+                    positions:
+                      type: array
+                      items:
+                        type: integer
+                    receiver:
+                      type: integer
+                    salesTax:
+                      type: integer
+                    invoiceTemplate:
+                      type: integer
+                    file:
+                      type: integer
+                  required:
+                    - serviceFrom
+                    - customerNumber
+                    - salesTax
+                    - invoiceTemplate
+    post:
+      summary: Create a new invoice
+      description: Create a new invoice based on the provided invoice data.
+      tags:
+        - Invoices
+      operationId: createInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                description:
+                  type: string
+                viaMail:
+                  type: boolean
+                preText:
+                  type: string
+                postText:
+                  type: string
+                serviceFrom:
+                  type: string
+                  format: date
+                serviceTo:
+                  type: string
+                  format: date
+                orderNumber:
+                  type: string
+                customerNumber:
+                  type: integer
+                paid:
+                  type: boolean
+                positions:
+                  type: array
+                  items:
+                    type: integer
+                receiver:
+                  type: integer
+                salesTax:
+                  type: integer
+                invoiceTemplate:
+                  type: integer
+                file:
+                  type: integer
+              required:
+                - serviceFrom
+                - customerNumber
+                - salesTax
+                - invoiceTemplate
+      responses:
+        '201':
+          description: The invoice was created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  description:
+                    type: string
+                  viaMail:
+                    type: boolean
+                  preText:
+                    type: string
+                  postText:
+                    type: string
+                  serviceFrom:
+                    type: string
+                    format: date
+                  serviceTo:
+                    type: string
+                    format: date
+                  orderNumber:
+                    type: string
+                  customerNumber:
+                    type: integer
+                  paid:
+                    type: boolean
+                  positions:
+                    type: array
+                    items:
+                      type: integer
+                  receiver:
+                    type: integer
+                  salesTax:
+                    type: integer
+                  invoiceTemplate:
+                    type: integer
+                  file:
+                    type: integer
+                required:
+                  - serviceFrom
+                  - customerNumber
+                  - salesTax
+                  - invoiceTemplate
